@@ -117,66 +117,94 @@ export async function fetchCardData() {
     };
   } catch (error) {
     console.log('Database Error:', error);
-    return ('Failed to card data.');
+    return { error: 'Failed to card data.' };
   }
 }
 
-// const ITEMS_PER_PAGE = 6;
-// export async function fetchFilteredInvoices(
-//   query: string,
-//   currentPage: number,
-// ) {
-//   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+const ITEMS_PER_PAGE = 6;
+export async function fetchFilteredInvoices(
+  query: string,
+  currentPage: number,
+) {
+  await connectToDB();
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
-//   try {
-//     const invoices = await sql<InvoicesTable>`
-//       SELECT
-//         invoices.id,
-//         invoices.amount,
-//         invoices.date,
-//         invoices.status,
-//         customers.name,
-//         customers.email,
-//         customers.image_url
-//       FROM invoices
-//       JOIN customers ON invoices.customer_id = customers.id
-//       WHERE
-//         customers.name ILIKE ${`%${query}%`} OR
-//         customers.email ILIKE ${`%${query}%`} OR
-//         invoices.amount::text ILIKE ${`%${query}%`} OR
-//         invoices.date::text ILIKE ${`%${query}%`} OR
-//         invoices.status ILIKE ${`%${query}%`}
-//       ORDER BY invoices.date DESC
-//       LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
-//     `;
+  try {
+    const invoices = await Invoices.aggregate([
+      {
+        $match: {
+          $or: [
+            { 'customer.name': { $regex: new RegExp(query, 'i') } },
+            { 'customer.email': { $regex: new RegExp(query, 'i') } },
+            { amount: { $regex: new RegExp(query, 'i') } },
+            { date: { $regex: new RegExp(query, 'i') } },
+            { status: { $regex: new RegExp(query, 'i') } },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'customers', // Name of the "customers" collection
+          localField: 'customer_id',
+          foreignField: 'id',
+          as: 'customer',
+        },
+      },
+      {
+        $unwind: '$customer'
+      },
+      {
+        $project: {
+          amount: 1,
+          name: '$customer.name',
+          image_url: '$customer.image_url',
+          email: '$customer.email',
+          date: 1,
+          status: 1
+        },
+      },
+      {
+        $sort: { date: -1 },
+      },
+      {
+        $skip: offset,
+      },
+      {
+        $limit: ITEMS_PER_PAGE,
+      },
+    ])
 
-//     return invoices.rows;
-//   } catch (error) {
-//     console.error('Database Error:', error);
-//     throw new Error('Failed to fetch invoices.');
-//   }
-// }
 
-// export async function fetchInvoicesPages(query: string) {
-//   try {
-//     const count = await sql`SELECT COUNT(*)
-//     FROM invoices
-//     JOIN customers ON invoices.customer_id = customers.id
-//     WHERE
-//       customers.name ILIKE ${`%${query}%`} OR
-//       customers.email ILIKE ${`%${query}%`} OR
-//       invoices.amount::text ILIKE ${`%${query}%`} OR
-//       invoices.date::text ILIKE ${`%${query}%`} OR
-//       invoices.status ILIKE ${`%${query}%`}
-//   `;
+    return invoices;
+  } catch (error) {
+    console.log('Database Error:', error);
+    return { error: 'Failed to card data.' };
+  }
+}
 
-//     const totalPages = Math.ceil(Number(count.rows[0].count) / ITEMS_PER_PAGE);
-//     return totalPages;
-//   } catch (error) {
-//     console.error('Database Error:', error);
-//     throw new Error('Failed to fetch total number of invoices.');
-//   }
-// }
+export async function fetchInvoicesPages(query: string) {
+  try {
+    const pipeline = [
+      {
+        $match: {
+          $or: [
+            { 'customers.name': { $regex: new RegExp(query, 'i') } },
+            { 'customers.email': { $regex: new RegExp(query, 'i') } },
+          ],
+        },
+      },
+      {
+        $count: 'invoices'
+      }
+    ]
+    const count = await Invoices.aggregate(pipeline)
+    const totalPages = Math.ceil(Number(count) / ITEMS_PER_PAGE);
+    return totalPages;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch total number of invoices.');
+  }
+}
 
 // export async function fetchInvoiceById(id: string) {
 //   try {
