@@ -139,6 +139,7 @@ export async function fetchFilteredInvoices(
             { amount: { $regex: new RegExp(query, 'i') } },
             { date: { $regex: new RegExp(query, 'i') } },
             { status: { $regex: new RegExp(query, 'i') } },
+
           ],
         },
       },
@@ -155,6 +156,7 @@ export async function fetchFilteredInvoices(
       },
       {
         $project: {
+          _id: { $toString: '$_id' },
           amount: 1,
           name: '$customer.name',
           image_url: '$customer.image_url',
@@ -206,29 +208,24 @@ export async function fetchInvoicesPages(query: string) {
   }
 }
 
-// export async function fetchInvoiceById(id: string) {
-//   try {
-//     const data = await sql<InvoiceForm>`
-//       SELECT
-//         invoices.id,
-//         invoices.customer_id,
-//         invoices.amount,
-//         invoices.status
-//       FROM invoices
-//       WHERE invoices.id = ${id};
-//     `;
+export async function fetchInvoiceById(id: string) {
+  try {
+    const data = await Invoices.findById({_id: id})
 
-//     const invoice = data.rows.map((invoice) => ({
-//       ...invoice,
-//       // Convert amount from cents to dollars
-//       amount: invoice.amount / 100,
-//     }));
+    const invoice = {
+      ...data?._doc,
+      // Convert amount from cents to dollars
+      amount: data.amount / 100,
+    }
 
-//     return invoice[0];
-//   } catch (error) {
-//     console.error('Database Error:', error);
-//   }
-// }
+    console.log(invoice, "requerst");
+    
+
+    return invoice;
+  } catch (error) {
+    console.error('Database Error:', error);
+  }
+}
 
 export async function fetchCustomers() {
   try {
