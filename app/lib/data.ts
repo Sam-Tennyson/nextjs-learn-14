@@ -1,13 +1,3 @@
-import { sql } from '@vercel/postgres';
-import {
-  CustomerField,
-  CustomersTable,
-  InvoiceForm,
-  InvoicesTable,
-  LatestInvoiceRaw,
-  User,
-  // Revenue,
-} from './definitions';
 import { formatCurrency } from './utils';
 import Revenues from '@/models/revenues';
 import { connectToDB } from './database';
@@ -199,6 +189,7 @@ export async function fetchInvoicesPages(query: string) {
         $count: 'invoices'
       }
     ]
+    await connectToDB();
     const count = await Invoices.aggregate(pipeline)
     const totalPages = Math.ceil(Number(count) / ITEMS_PER_PAGE);
     return totalPages;
@@ -210,6 +201,7 @@ export async function fetchInvoicesPages(query: string) {
 
 export async function fetchInvoiceById(id: string) {
   try {
+    await connectToDB();
     const data = await Invoices.findById({_id: id})
 
     const invoice = {
@@ -217,10 +209,6 @@ export async function fetchInvoiceById(id: string) {
       // Convert amount from cents to dollars
       amount: data.amount / 100,
     }
-
-    console.log(invoice, "requerst");
-    
-
     return invoice;
   } catch (error) {
     console.error('Database Error:', error);
