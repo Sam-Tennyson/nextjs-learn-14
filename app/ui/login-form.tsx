@@ -13,6 +13,7 @@ import { authenticate } from '../lib/action';
 export default function LoginForm() {
   
   const [code, action] = useFormState(authenticate, undefined);
+  console.log(code);
   
   return (
     <form className="space-y-3" action={action}>

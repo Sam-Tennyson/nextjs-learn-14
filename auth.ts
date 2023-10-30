@@ -18,28 +18,14 @@ export const { auth, signIn, signOut } = NextAuth({
 
                 if (parsedCredentials.success) {
                     const { email, password } = parsedCredentials.data;
-                    try {
-                        await connectToDB();
-                        console.log(email, password);
-                        
-                        const user = await Users.findOne({ email });
-                        console.log(user);
-                        
-                        // if (!user) return null;
-
-                        // secure_password_login
-                        // const passwordsMatch = await bcrypt.compare(password, user.password);
-                        // console.log(passwordsMatch, "password");
-                        // if (passwordsMatch) return user;
-                        return user
-                    } catch (error) {
-                        console.log(error);
-                        
-                        return {
-                            message: 'Invalid credentials',
-                        }
-                    }
-                       
+                    await connectToDB();
+                    const user = await Users.findOne({ email, password });
+                    // secure_password_login
+                    // if (!user) return null;
+                    // const passwordsMatch = await bcrypt.compare(password, user.password);
+                    // console.log(passwordsMatch, "password");
+                    // if (passwordsMatch) return user;
+                    return user
                 }
                 return null
             },
