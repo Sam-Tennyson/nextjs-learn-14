@@ -5,12 +5,24 @@ import { lusitana } from '@/app/ui/fonts';
 import { fetchCustomers, fetchLatestInvoices, fetchRevenue } from '../lib/data';
 import { Suspense } from 'react';
 import { CardsSkeleton } from '../ui/skeletons';
- 
-export default async function Page() {
-  const revenue = await fetchRevenue();
-  const customers = await fetchCustomers();
-  const latestInvoices = await fetchLatestInvoices();
 
+interface Revenue {
+  month: string;
+  revenue: number;
+};
+
+interface LatestInvoice {
+  id: string;
+  name: string;
+  image_url: string;
+  email: string;
+  amount: string;
+};
+
+
+export default async function Page() {
+  const revenue: Revenue[] | any = await fetchRevenue();
+  const latestInvoices : LatestInvoice[] | any = await fetchLatestInvoices();
   
   return (
     <main>
